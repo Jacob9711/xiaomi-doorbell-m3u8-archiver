@@ -1,0 +1,21 @@
+enqueue:
+  name: Enqueue
+  description: Enqueue a manual video job from an entity.
+  fields:
+    entity_id:
+      name: Entity
+      description: Camera or Xiaomi doorbell entity ID.
+      required: true
+      example: camera.loock_r2_559c_video_doorbell
+      selector:
+        entity: {}
+    event_time:
+      name: Event Time
+      description: Optional event time override used for deduplication key.
+      example: "2026-02-27T10:12:31"
+      selector:
+        text: {}
+
+run_archive_maintenance:
+  name: Run Archive Maintenance
+  description: Apply archive policy once.
