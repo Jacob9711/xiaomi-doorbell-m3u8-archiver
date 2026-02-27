@@ -1,7 +1,7 @@
 import asyncio
 
-from custom_components.xiaomi_doorbell_m3u8_archiver.adapters.mock.mock_archive import (
-    MockArchive,
+from custom_components.xiaomi_doorbell_m3u8_archiver.adapters.mock.mock_storage import (
+    MockStorage,
 )
 from custom_components.xiaomi_doorbell_m3u8_archiver.adapters.mock.mock_processor import (
     MockProcessor,
@@ -23,9 +23,9 @@ def test_orchestrator_happy_path() -> None:
     async def scenario() -> None:
         source = MockSource()
         processor = MockProcessor()
-        archive = MockArchive()
+        storage = MockStorage()
         repo = MockRepository()
-        orchestrator = Orchestrator(source, processor, archive, repo)
+        orchestrator = Orchestrator(source, processor, storage, repo)
 
         await orchestrator.start()
         try:
@@ -40,8 +40,8 @@ def test_orchestrator_happy_path() -> None:
             assert saved.status == JobStatus.DONE
             assert "input" in saved.artifacts
             assert "output" in saved.artifacts
-            assert archive.store_calls == 1
-            assert archive.apply_policy_calls == 1
+            assert storage.store_calls == 1
+            assert storage.apply_policy_calls == 1
         finally:
             await orchestrator.stop()
 

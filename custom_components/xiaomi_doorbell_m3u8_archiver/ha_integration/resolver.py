@@ -33,8 +33,23 @@ def build_source_request(
         source_type=source_type,
         source_ref=entity_id,
         payload=payload,
-        dedup_key=f"{entity_id}:{resolved_event_time}",
     )
+
+
+def should_enqueue_motion_event(
+    old_attributes: Mapping[str, Any] | None,
+    new_attributes: Mapping[str, Any] | None,
+) -> bool:
+    """Return True only when motion_video_time changed to a non-empty value."""
+    if not new_attributes:
+        return False
+
+    new_motion = _as_nonempty_str(new_attributes.get("motion_video_time"))
+    if new_motion is None:
+        return False
+
+    old_motion = _as_nonempty_str((old_attributes or {}).get("motion_video_time"))
+    return old_motion != new_motion
 
 
 def _resolve_event_time(event_time: str | None, attributes: Mapping[str, Any]) -> str:

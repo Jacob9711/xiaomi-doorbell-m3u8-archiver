@@ -1,0 +1,23 @@
+"""Job repository interface."""
+
+from __future__ import annotations
+
+from typing import Protocol
+
+from ..domain import Job
+
+
+class JobRepositoryPort(Protocol):
+    """Persistence adapter for job state."""
+
+    async def save(self, job: Job) -> None:
+        """Persist a newly created job."""
+
+    async def get(self, job_id: str) -> Job | None:
+        """Read an existing job."""
+
+    async def update(self, job: Job) -> None:
+        """Persist a job state update."""
+
+    async def list_incomplete(self) -> list[Job]:
+        """List jobs not in terminal state."""

@@ -9,7 +9,6 @@ from custom_components.xiaomi_doorbell_m3u8_archiver.core.domain import (
 def test_source_request_defaults() -> None:
     req = SourceRequest(source_type="ha_event", source_ref="camera.demo")
     assert req.payload == {}
-    assert req.dedup_key is None
 
 
 def test_job_transition_and_history() -> None:

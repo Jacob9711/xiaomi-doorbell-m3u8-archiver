@@ -6,7 +6,7 @@ from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.event import async_track_state_change_event
 
 from .coordinator import IntegrationRuntime
-from .resolver import build_source_request
+from .resolver import build_source_request, should_enqueue_motion_event
 
 
 def async_setup_listener(
@@ -17,8 +17,15 @@ def async_setup_listener(
     """Track doorbell camera updates and enqueue tasks."""
 
     async def _on_state_change(event: Event) -> None:
+        old_state = event.data.get("old_state")
         new_state = event.data.get("new_state")
         if new_state is None:
+            return
+
+        if not should_enqueue_motion_event(
+            old_attributes=(old_state.attributes if old_state else None),
+            new_attributes=new_state.attributes,
+        ):
             return
 
         request = build_source_request(

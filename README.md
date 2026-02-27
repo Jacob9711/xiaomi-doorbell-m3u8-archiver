@@ -2,6 +2,43 @@
 
 Custom Home Assistant integration for Xiaomi doorbell video event pipeline.
 
+中文文档：`README.zh-CN.md`
+
+### Development
+
+Set up a local Python environment and install test/lint tools:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip pytest ruff
+```
+
+Common development commands:
+
+```bash
+# format
+python -m ruff format .
+
+# lint
+python -m ruff check .
+
+# lint with autofix
+python -m ruff check . --fix
+
+# syntax/import smoke check
+python -m compileall custom_components tests
+
+# full tests
+python -m pytest -q
+
+# single test file
+python -m pytest -q tests/test_orchestrator_happy_path.py
+
+# single test by node id
+python -m pytest -q tests/test_orchestrator_happy_path.py::test_orchestrator_happy_path
+```
+
 ### Install
 
 1. Copy `custom_components/xiaomi_doorbell_m3u8_archiver` into your HA config directory.
@@ -9,41 +46,87 @@ Custom Home Assistant integration for Xiaomi doorbell video event pipeline.
 
 ### Configuration
 
-Add to `configuration.yaml`:
+This integration depends on `xiaomi_miot` to provide doorbell stream metadata.
 
-```yaml
-xiaomi_doorbell_m3u8_archiver:
-  camera_entity_id: camera.loock_r2_559c_video_doorbell
-  archive_root: /media/xiaomi_video
-  ffmpeg_path: ffmpeg
-  fetch_concurrency: 2
-  process_concurrency: 1
-  max_queue_size: 200
-  dedup_window_sec: 60
-  retry_limit: 1
-  retry_backoff_sec: 0.2
-```
+#### Prerequisites
 
-`camera_entity_id` is optional. If omitted, only manual service enqueue is active.
+1. Install and configure `xiaomi_miot` first.
+2. Ensure your doorbell/camera entity is available in Home Assistant.
+3. Verify the entity exposes:
+   - `stream_address` (required): m3u8 stream URL
+   - `motion_video_time` (recommended): motion event timestamp
+
+If `stream_address` is missing, this integration cannot enqueue jobs.
+
+#### Setup Steps
+
+This integration is configured from Home Assistant UI:
+
+1. Go to **Settings -> Devices & Services -> Add Integration**.
+2. Search for **Xiaomi Doorbell M3U8 Archiver**.
+3. Select your Xiaomi Miot doorbell/camera entity in `camera_entity_id`.
+4. Optionally adjust runtime settings:
+   - `storage_root` (default `/media/xiaomi_video`)
+   - `ffmpeg_path` (default `ffmpeg`)
+   - `fetch_concurrency` (`1-4`, default `2`)
+   - `process_concurrency` (currently fixed to `1`)
+   - `max_queue_size` (default `200`)
+   - `retry_limit` (default `1`)
+   - `retry_backoff_sec` (default `0.2`)
+
+Configuration is stored in Home Assistant Config Entries (not in `configuration.yaml`).
+
+#### Event Triggering Model
+
+- The integration listens to state updates of the configured `camera_entity_id`.
+- A new job is enqueued when `motion_video_time` changes.
+- Stream URL is resolved from `stream_address` on that same entity.
+- Manual enqueue is also available through service calls.
+
+#### Quick Validation
+
+After setup, validate:
+
+1. Sensor and binary sensor entities are created.
+2. New motion events change queue/process counters.
+3. Videos are written to `storage_root/YYYY/MM/` with entity-prefixed filenames.
 
 ### Services
 
 - `xiaomi_doorbell_m3u8_archiver.enqueue`
-- `xiaomi_doorbell_m3u8_archiver.run_archive_maintenance`
+- `xiaomi_doorbell_m3u8_archiver.get_status`
 
 `enqueue` service parameters:
 
 - `entity_id` (required): camera or doorbell entity id
 - `event_time` (optional): manual event timestamp override
 
+`enqueue` still requires the target entity to expose `stream_address`.
+
+`get_status` supports optional routing parameters:
+
+- `entry_id` (optional): target one config entry explicitly
+- `entity_id` (optional): target runtime by configured camera entity
+
+When multiple integration entries exist and `get_status` is called without a target,
+the service returns aggregated multi-instance status.
+
 Users do not need to configure or provide `stream_url`. The integration resolves stream metadata from the configured entity state.
 
-`archive_root` and `ffmpeg_path` are optional and use defaults shown above.
+`storage_root` and `ffmpeg_path` are optional and use defaults shown above.
+
+Storage layout uses monthly folders and timestamp filenames:
+
+- Folder: `storage_root/YYYY/MM/`
+- File: `YYYY_MM_DD_HH_mm_ss.mp4` (adds `_01`, `_02` suffix if same-second conflicts)
 
 ### Sensors
 
 - `sensor.xiaomi_doorbell_m3u8_archiver_total_done`
 - `sensor.xiaomi_doorbell_m3u8_archiver_total_failed`
+- `sensor.xiaomi_doorbell_m3u8_archiver_processed_today`
 - `sensor.xiaomi_doorbell_m3u8_archiver_queue_fetch_size`
 - `sensor.xiaomi_doorbell_m3u8_archiver_queue_process_size`
 - `sensor.xiaomi_doorbell_m3u8_archiver_last_job_status`
+- `sensor.xiaomi_doorbell_m3u8_archiver_current_job_status`
+- `binary_sensor.xiaomi_doorbell_m3u8_archiver_is_busy`

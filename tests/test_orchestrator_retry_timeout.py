@@ -1,7 +1,7 @@
 import asyncio
 
-from custom_components.xiaomi_doorbell_m3u8_archiver.adapters.mock.mock_archive import (
-    MockArchive,
+from custom_components.xiaomi_doorbell_m3u8_archiver.adapters.mock.mock_storage import (
+    MockStorage,
 )
 from custom_components.xiaomi_doorbell_m3u8_archiver.adapters.mock.mock_processor import (
     MockProcessor,
@@ -24,10 +24,10 @@ def test_retry_then_success() -> None:
     async def scenario() -> None:
         source = MockSource(fail_fetch_times=1)
         processor = MockProcessor(fail_process_times=1)
-        archive = MockArchive()
+        storage = MockStorage()
         repo = MockRepository()
         policy = QueuePolicy(retry_limit=1, retry_backoff_sec=0.001)
-        orchestrator = Orchestrator(source, processor, archive, repo, queue_policy=policy)
+        orchestrator = Orchestrator(source, processor, storage, repo, queue_policy=policy)
 
         await orchestrator.start()
         try:
@@ -52,14 +52,14 @@ def test_timeout_leads_to_failed_job() -> None:
     async def scenario() -> None:
         source = MockSource(fetch_delay_sec=0.02)
         processor = MockProcessor()
-        archive = MockArchive()
+        storage = MockStorage()
         repo = MockRepository()
         policy = QueuePolicy(
             retry_limit=0,
             fetch_timeout_sec=0.001,
             retry_backoff_sec=0.001,
         )
-        orchestrator = Orchestrator(source, processor, archive, repo, queue_policy=policy)
+        orchestrator = Orchestrator(source, processor, storage, repo, queue_policy=policy)
 
         await orchestrator.start()
         try:
