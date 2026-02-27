@@ -32,7 +32,6 @@ class HttpM3U8Source:
     def __init__(self, temp_root: Path | None = None, fetch_bytes=None) -> None:
         self._counter = 0
         self._temp_root = temp_root or Path(tempfile.gettempdir()) / "xdma_jobs"
-        self._temp_root.mkdir(parents=True, exist_ok=True)
         self._fetch_bytes = fetch_bytes or _fetch_bytes_default
 
     async def create_job(self, request: SourceRequest) -> Job:
@@ -49,7 +48,7 @@ class HttpM3U8Source:
             raise ValueError("Missing stream_url in job metadata")
 
         job_temp = self._temp_root / job.job_id
-        job_temp.mkdir(parents=True, exist_ok=True)
+        await asyncio.to_thread(job_temp.mkdir, parents=True, exist_ok=True)
 
         m3u8_content = await asyncio.to_thread(self._fetch_bytes, stream_url)
         playlist_lines = m3u8_content.decode("utf-8", errors="replace").splitlines()
@@ -67,13 +66,14 @@ class HttpM3U8Source:
             local_name = f"segment_{segment_index:05d}{ext}"
             segment_path = job_temp / local_name
             segment_bytes = await asyncio.to_thread(self._fetch_bytes, segment_url)
-            segment_path.write_bytes(segment_bytes)
+            await asyncio.to_thread(segment_path.write_bytes, segment_bytes)
 
             rewritten.append(local_name)
             segment_index += 1
 
         local_playlist = job_temp / "input.m3u8"
-        local_playlist.write_text("\n".join(rewritten) + "\n", encoding="utf-8")
+        playlist_text = "\n".join(rewritten) + "\n"
+        await asyncio.to_thread(local_playlist.write_text, playlist_text, encoding="utf-8")
 
         return Artifact(
             kind="input",
@@ -184,7 +184,7 @@ class LocalFsArchive:
 
         event_dt = self._extract_event_time(job)
         subdir = self._archive_root / event_dt.strftime("%Y") / event_dt.strftime("%m") / event_dt.strftime("%d")
-        subdir.mkdir(parents=True, exist_ok=True)
+        await asyncio.to_thread(subdir.mkdir, parents=True, exist_ok=True)
 
         source_token = job.source_ref.replace(".", "_").replace(":", "_")
         filename = f"{source_token}_{event_dt.strftime('%Y-%m-%d_%H-%M-%S')}_{job.job_id}.mp4"
@@ -202,6 +202,9 @@ class LocalFsArchive:
                 "active_keep_count": policy.active_keep_count,
             }
 
+        return await asyncio.to_thread(self._apply_policy_sync, policy)
+
+    def _apply_policy_sync(self, policy: ArchivePolicy) -> dict:
         deleted = 0
         files = sorted(self._archive_root.rglob("*.mp4"), key=lambda p: p.stat().st_mtime, reverse=True)
         now = _utcnow()
