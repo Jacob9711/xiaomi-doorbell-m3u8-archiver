@@ -3,9 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
-from ..adapters.runtime import RuntimeArchive, RuntimeProcessor, RuntimeRepository, RuntimeSource
+from ..adapters.production import (
+    FfmpegProcessor,
+    HttpM3U8Source,
+    LocalFsArchive,
+    RuntimeRepository,
+)
+from ..const import CONF_ARCHIVE_ROOT, CONF_FFMPEG_PATH
 from ..core.domain import Job, SourceRequest
 from ..core.orchestrator import Orchestrator
 from ..core.policies import ArchivePolicy, QueuePolicy
@@ -17,7 +24,7 @@ class IntegrationRuntime:
 
     orchestrator: Orchestrator
     repository: RuntimeRepository
-    archive: RuntimeArchive
+    archive: LocalFsArchive
     unsub_listener: Any = None
 
     @classmethod
@@ -32,9 +39,9 @@ class IntegrationRuntime:
             retry_backoff_sec=cfg["retry_backoff_sec"],
         )
         archive_policy = ArchivePolicy()
-        source = RuntimeSource()
-        processor = RuntimeProcessor()
-        archive = RuntimeArchive()
+        source = HttpM3U8Source()
+        processor = FfmpegProcessor(ffmpeg_path=cfg[CONF_FFMPEG_PATH])
+        archive = LocalFsArchive(archive_root=Path(cfg[CONF_ARCHIVE_ROOT]))
         repository = RuntimeRepository()
         orchestrator = Orchestrator(
             source=source,

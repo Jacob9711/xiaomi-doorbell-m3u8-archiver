@@ -10,6 +10,8 @@ CONF_MAX_QUEUE_SIZE = "max_queue_size"
 CONF_DEDUP_WINDOW_SEC = "dedup_window_sec"
 CONF_RETRY_LIMIT = "retry_limit"
 CONF_RETRY_BACKOFF_SEC = "retry_backoff_sec"
+CONF_ARCHIVE_ROOT = "archive_root"
+CONF_FFMPEG_PATH = "ffmpeg_path"
 
 SERVICE_ENQUEUE = "enqueue"
 SERVICE_RUN_ARCHIVE_MAINTENANCE = "run_archive_maintenance"

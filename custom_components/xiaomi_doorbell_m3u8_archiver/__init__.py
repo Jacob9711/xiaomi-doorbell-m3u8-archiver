@@ -6,8 +6,10 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from .const import (
+    CONF_ARCHIVE_ROOT,
     CONF_CAMERA_ENTITY_ID,
     CONF_DEDUP_WINDOW_SEC,
+    CONF_FFMPEG_PATH,
     CONF_FETCH_CONCURRENCY,
     CONF_MAX_QUEUE_SIZE,
     CONF_NAME_DEFAULT,
@@ -56,6 +58,8 @@ try:
                     vol.Optional(CONF_RETRY_BACKOFF_SEC, default=0.2): vol.All(
                         vol.Coerce(float), vol.Range(min=0)
                     ),
+                    vol.Optional(CONF_ARCHIVE_ROOT, default="/media/xiaomi_video"): cv.string,
+                    vol.Optional(CONF_FFMPEG_PATH, default="ffmpeg"): cv.string,
                 }
             )
         },

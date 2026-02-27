@@ -14,6 +14,8 @@ Add to `configuration.yaml`:
 ```yaml
 xiaomi_doorbell_m3u8_archiver:
   camera_entity_id: camera.loock_r2_559c_video_doorbell
+  archive_root: /media/xiaomi_video
+  ffmpeg_path: ffmpeg
   fetch_concurrency: 2
   process_concurrency: 1
   max_queue_size: 200
@@ -35,6 +37,8 @@ xiaomi_doorbell_m3u8_archiver:
 - `event_time` (optional): manual event timestamp override
 
 Users do not need to configure or provide `stream_url`. The integration resolves stream metadata from the configured entity state.
+
+`archive_root` and `ffmpeg_path` are optional and use defaults shown above.
 
 ### Sensors
 
