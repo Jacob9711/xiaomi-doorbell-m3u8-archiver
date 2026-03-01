@@ -6,7 +6,7 @@ enqueue:
       name: Entity
       description: Camera or Xiaomi doorbell entity ID.
       required: true
-      example: camera.loock_r2_559c_video_doorbell
+      example: camera.loock_xxxxx_video_doorbell
       selector:
         entity: {}
     event_time:
