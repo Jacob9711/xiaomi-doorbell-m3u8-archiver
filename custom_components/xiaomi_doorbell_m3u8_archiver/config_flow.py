@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import os
+import shutil
 
 import voluptuous as vol
 from homeassistant import config_entries
@@ -31,22 +33,43 @@ class XiaomiDoorbellM3U8ArchiverConfigFlow(config_entries.ConfigFlow, domain=DOM
 
     async def async_step_user(self, user_input: dict | None = None):
         """Handle initial user step."""
+        errors: dict[str, str] = {}
         try:
             if user_input is not None:
-                _LOGGER.debug(
-                    "Config flow submit for camera entity: %s",
-                    user_input.get(CONF_CAMERA_ENTITY_ID),
-                )
-                await self.async_set_unique_id(user_input[CONF_CAMERA_ENTITY_ID])
-                self._abort_if_unique_id_configured()
-                return self.async_create_entry(
-                    title=user_input[CONF_CAMERA_ENTITY_ID],
-                    data=user_input,
-                )
+                storage_root = user_input[CONF_STORAGE_ROOT]
+                ffmpeg_path = user_input[CONF_FFMPEG_PATH]
+
+                # Validate storage root
+                if not os.path.exists(storage_root):
+                    try:
+                        os.makedirs(storage_root, exist_ok=True)
+                    except OSError:
+                        errors[CONF_STORAGE_ROOT] = "invalid_storage_path"
+                
+                if not errors and not os.access(storage_root, os.W_OK):
+                    errors[CONF_STORAGE_ROOT] = "invalid_storage_path"
+
+                # Validate ffmpeg path
+                if not errors and not shutil.which(ffmpeg_path):
+                    errors[CONF_FFMPEG_PATH] = "ffmpeg_not_found"
+
+                if not errors:
+                    _LOGGER.debug(
+                        "Config flow submit for camera entity: %s",
+                        user_input.get(CONF_CAMERA_ENTITY_ID),
+                    )
+                    await self.async_set_unique_id(user_input[CONF_CAMERA_ENTITY_ID])
+                    self._abort_if_unique_id_configured()
+                    return self.async_create_entry(
+                        title=user_input[CONF_CAMERA_ENTITY_ID],
+                        data=user_input,
+                    )
 
             schema = vol.Schema(
                 {
-                    vol.Required(CONF_CAMERA_ENTITY_ID): selector.EntitySelector(),
+                    vol.Required(CONF_CAMERA_ENTITY_ID): selector.EntitySelector(
+                        selector.EntitySelectorConfig(domain="camera")
+                    ),
                     vol.Optional(CONF_STORAGE_ROOT, default="/media/xiaomi_video"): cv.string,
                     vol.Optional(CONF_FFMPEG_PATH, default="ffmpeg"): cv.string,
                     vol.Optional(CONF_FETCH_CONCURRENCY, default=2): selector.NumberSelector(
@@ -72,7 +95,7 @@ class XiaomiDoorbellM3U8ArchiverConfigFlow(config_entries.ConfigFlow, domain=DOM
                     ),
                 }
             )
-            return self.async_show_form(step_id="user", data_schema=schema)
+            return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
         except Exception:
             _LOGGER.exception("Config flow step_user failed")
             raise
