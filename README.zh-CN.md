@@ -11,7 +11,17 @@ English docs: `README.md`
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -U pip pytest ruff
+python -m pip install -U pip pytest ruff homeassistant
+```
+
+也可以使用 mise/uv 任务：
+
+```bash
+mise trust
+mise run setup
+mise run build
+mise run test:unit
+mise run test:integration
 ```
 
 常用开发命令：

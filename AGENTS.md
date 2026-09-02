@@ -11,7 +11,8 @@ Guidance for coding agents working in this repository.
 
 ## Environment and Setup
 
-This repo includes a minimal `pyproject.toml` for Ruff lint/format config.
+This repo includes a minimal `pyproject.toml` for Ruff lint/format config and
+`mise.toml` for uv-managed local development tasks.
 There is still no `requirements*.txt` or `tox.ini`.
 Use a plain Python environment and install the minimum tools directly.
 
@@ -20,7 +21,14 @@ Suggested setup:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -U pip pytest ruff
+python -m pip install -U pip pytest ruff homeassistant
+```
+
+Mise/uv setup:
+
+```bash
+mise trust
+mise run setup
 ```
 
 Ruff is the standard lint/format tool in this repository.
@@ -36,12 +44,26 @@ Use bytecode compilation as a fast syntax/import smoke check:
 python -m compileall custom_components tests
 ```
 
+Mise task:
+
+```bash
+mise run build
+```
+
 ### Test Commands (pytest)
 
 Run full suite:
 
 ```bash
 python -m pytest -q
+```
+
+Mise tasks:
+
+```bash
+mise run test
+mise run test:unit
+mise run test:integration
 ```
 
 Run one file:
@@ -86,6 +108,13 @@ Lint with autofix:
 
 ```bash
 python -m ruff check . --fix
+```
+
+Mise tasks:
+
+```bash
+mise run format
+mise run lint
 ```
 
 Type checking is not configured (no mypy/pyright config in repo).

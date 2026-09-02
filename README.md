@@ -11,7 +11,17 @@ Set up a local Python environment and install test/lint tools:
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -U pip pytest ruff
+python -m pip install -U pip pytest ruff homeassistant
+```
+
+Or use the mise/uv task setup:
+
+```bash
+mise trust
+mise run setup
+mise run build
+mise run test:unit
+mise run test:integration
 ```
 
 Common development commands:

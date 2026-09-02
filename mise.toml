@@ -1,0 +1,42 @@
+[tools]
+python = "3.13"
+uv = "latest"
+
+[env]
+VIRTUAL_ENV = ".venv"
+_.path = [".venv/bin"]
+
+[tasks.setup]
+description = "Create the uv-managed virtual environment and install development dependencies"
+run = [
+  "uv venv .venv",
+  "uv pip install pytest ruff homeassistant",
+]
+
+[tasks.format]
+description = "Format Python files with Ruff"
+run = "python -m ruff format ."
+
+[tasks.lint]
+description = "Lint Python files with Ruff"
+run = "python -m ruff check ."
+
+[tasks.build]
+description = "Run the syntax/import smoke check"
+run = "python -m compileall custom_components tests"
+
+[tasks."test:unit"]
+description = "Run core unit tests that do not require Home Assistant runtime wiring"
+run = [
+  "python -m pytest -q tests/test_architecture_boundaries.py tests/test_domain_models.py tests/test_job_lifecycle_cleanup.py tests/test_orchestrator_happy_path.py tests/test_orchestrator_retry_timeout.py tests/test_production_adapters.py tests/test_queue_and_dedup_policy.py tests/test_retention_policy_defaults.py",
+]
+
+[tasks."test:integration"]
+description = "Run Home Assistant integration-boundary tests"
+run = [
+  "python -m pytest -q tests/test_config_flow.py tests/test_entity_translations.py tests/test_runtime_config_validation.py tests/test_runtime_motion_state.py tests/test_runtime_routing.py tests/test_runtime_status_metrics.py tests/test_services.py tests/test_stream_resolver.py",
+]
+
+[tasks.test]
+description = "Run the full pytest suite"
+run = "python -m pytest -q"
